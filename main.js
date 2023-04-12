@@ -1,8 +1,13 @@
 // Import required modules
 const mongoose = require('mongoose');
+require('dotenv').config(); // Load environment variables from .env
+
 
 // Connect to MongoDB using Mongoose
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('Failed to connect to MongoDB', err));
+
 
 // Create a Person Schema
 const personSchema = new mongoose.Schema({
@@ -21,10 +26,13 @@ const person = new Person({
   favoriteFoods: ['pizza', 'burger', 'sushi']
 });
 
-person.save(function(err, data) {
-  if (err) return console.error(err);
-  console.log('Person saved:', data);
-});
+person.save()
+  .then(data => {
+    console.log('Person saved:', data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Create many people using Model.create()
 const arrayOfPeople = [
@@ -33,70 +41,97 @@ const arrayOfPeople = [
   { name: 'Charlie', age: 40, favoriteFoods: ['pizza', 'pasta'] }
 ];
 
-Person.create(arrayOfPeople, function(err, data) {
-  if (err) return console.error(err);
-  console.log('People created:', data);
-});
+Person.create(arrayOfPeople)
+  .then(data => {
+    console.log('People created:', data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Use Model.find() to search for people by name
-Person.find({ name: 'John' }, function(err, data) {
-  if (err) return console.error(err);
-  console.log('People found by name:', data);
-});
+Person.find({ name: 'John' })
+  .then(data => {
+    console.log('People found by name:', data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Use Model.findOne() to search for a person by favorite food
 const food = 'burger';
-Person.findOne({ favoriteFoods: food }, function(err, data) {
-  if (err) return console.error(err);
-  console.log(`Person found by favorite food "${food}":`, data);
-});
+Person.findOne({ favoriteFoods: food })
+  .then(data => {
+    console.log(`Person found by favorite food "${food}":`, data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Use Model.findById() to search for a person by _id
-const personId = '60dcd49c3e040b0019f6d8c7'; // Replace with valid _id
-Person.findById(personId, function(err, data) {
-  if (err) return console.error(err);
-  console.log(`Person found by _id "${personId}":`, data);
-});
+const personId = '6436af498dcda3c126fa9a4f'; // Replace with valid _id
+Person.findById(personId)
+  .then(data => {
+    console.log(`Person found by _id "${personId}":`, data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Perform classic updates by finding a person by _id, adding "hamburger" to their favoriteFoods, and saving the updated person
-Person.findById(personId, function(err, person) {
-  if (err) return console.error(err);
-  person.favoriteFoods.push('hamburger');
-  person.save(function(err, data) {
-    if (err) return console.error(err);
+Person.findByIdAndUpdate(personId, { $push: { favoriteFoods: 'hamburger' } }, { new: true })
+  .then(data => {
     console.log('Person updated:', data);
+  })
+  .catch(err => {
+    console.error(err);
   });
-});
 
 // Perform new updates on a document using Model.findOneAndUpdate()
 const personName = 'Alice';
-Person.findOneAndUpdate({ name: personName }, { age: 20 }, { new: true }, function(err, data) {
-  if (err) return console.error(err);
-  console.log(`Person "${personName}" updated:`, data);
-});
+Person.findOneAndUpdate({ name: personName }, { age: 20 }, { new: true })
+  .then(data => {
+    console.log(`Person "${personName}" updated:`, data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
 
 // Delete one person by _id using Model.findByIdAndRemove()
-Person.findByIdAndRemove(personId, function(err, data) {
-  if (err) return console.error(err);
-  console.log(`Person "${personId}" removed:`, data);
-});
-
-// Delete all people with name "Mary" using Model.remove()
-const name = 'Mary';
-Person.remove({ name: name }, function(err, data) {
-  if (err) return console.error(err);
-  console.log(`People with name "Mary" ` , data )
-});
-
-
-
-Person.find({ favoriteFoods: 'burrito' }) // Find people who like burritos
-  .sort({ name: 1 }) // Sort the results by name in ascending order
-  .limit(2) // Limit the results to two documents
-  .select('-age') // Hide the 'age' field in the results
-  .exec(function(err, data) {
-    if (err) return console.error(err);
-    console.log('People who like burritos:', data);
+Person.findByIdAndRemove(personId)
+  .then(data => {
+    console.log(`Person "${personId}" removed:`, data);
+  })
+  .catch(err => {
+    console.error(err);
   });
+
+// Delete all people with name "Mary" using Model.deleteMany()
+const name = 'Mary';
+Person.deleteMany({ name: name })
+  .then(data => {
+    console.log(`People with name "Mary" deleted:`, data);
+  })
+  .catch(err => {
+    console.error(err);
+  });
+
+
+
+// Find people who like burritos, sort by name, limit to 2 documents, and hide age field
+const findPeopleWhoLikeBurritos = async () => {
+  try {
+    const data = await Person.find({ favoriteFoods: 'burrito' })
+      .sort({ name: 1 })
+      .limit(2)
+      .select('-age')
+      .exec();
+    console.log('People who like burritos:', data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+findPeopleWhoLikeBurritos();
 
 
